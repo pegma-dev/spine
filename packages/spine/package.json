@@ -1,6 +1,6 @@
 {
   "name": "@pegma/spine",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Shared identity, time, logging, and event contracts for Pegma components.",
   "license": "MIT",
   "type": "module",
