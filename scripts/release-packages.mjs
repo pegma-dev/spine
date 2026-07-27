@@ -45,7 +45,7 @@ function run(command, arguments_, options = {}) {
     cwd: options.cwd,
     encoding: "utf8",
     env: options.env ?? process.env,
-    shell: false,
+    shell: options.shell ?? false,
     stdio: options.capture ? "pipe" : "inherit",
   });
   if (result.error) throw result.error;
@@ -61,7 +61,10 @@ function run(command, arguments_, options = {}) {
 function runNpm(arguments_, options = {}) {
   const npmExecPath = process.env.npm_execpath;
   return npmExecPath === undefined
-    ? run(process.platform === "win32" ? "npm.cmd" : "npm", arguments_, options)
+    ? run(process.platform === "win32" ? "npm.cmd" : "npm", arguments_, {
+        ...options,
+        shell: process.platform === "win32",
+      })
     : run(process.execPath, [npmExecPath, ...arguments_], options);
 }
 
