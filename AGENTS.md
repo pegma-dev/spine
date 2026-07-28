@@ -55,9 +55,11 @@ exclude `src/**/*.test.ts`, or compiled tests are published to consumers.
 Work on a `claude/*` branch and open a pull request. The gate is
 `npm run format:check`, `npm run check`, `npm test` — all three, on Node 22 and 24.
 
-Publishing is trusted-publisher only; no tokens exist. A release is
-`gh release create vX.Y.Z`, which runs the gate and publishes with a provenance
-attestation.
+Publishing is trusted-publisher only; no tokens exist. A release starts from a
+protected signed annotated `vX.Y.Z` tag already on `origin/main`, followed by
+`gh release create vX.Y.Z --verify-tag`. The unprivileged preparation job runs
+the gate and packs the exact artifact; only the minimal publish job receives
+OIDC authority. See `docs/RELEASING.md`.
 
 ## Where things stand
 
