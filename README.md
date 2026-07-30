@@ -6,8 +6,8 @@
 The small, stable contracts every [Pegma](https://pegma.dev) component shares.
 
 > [!IMPORTANT]
-> Spine is in early `0.x` development. Its public API is not stable, its
-> packages are not published, and it is not ready for production use.
+> Spine is in early `0.x` development. `@pegma/spine` is published on npm, but
+> its public API is not stable and it is not ready for production use.
 
 ## Why it exists
 
