@@ -160,6 +160,22 @@ describe("release source authentication", () => {
     expect(workflow).not.toContain("workflow_dispatch");
     expect(workflow).toContain("retention-days: 30");
   });
+
+  it("pins the npm bootstrap by tarball hash rather than by version alone", () => {
+    const workflow = readFileSync(
+      join(process.cwd(), ".github", "workflows", "publish.yml"),
+      "utf8",
+    );
+    // The lockfile constrains every other install in the preparation job, so
+    // the npm bootstrap is the one fetch that needs its own committed digest.
+    expect(workflow).not.toMatch(/npm install --global npm@/u);
+    expect(workflow).toMatch(/NPM_TARBALL_SHA256: [0-9a-f]{64}\n/u);
+    expect(workflow).toContain("sha256sum --check --strict --quiet");
+    const digestIndex = workflow.indexOf("sha256sum --check");
+    const installIndex = workflow.indexOf('npm install --global "${tarball}"');
+    expect(digestIndex).toBeGreaterThanOrEqual(0);
+    expect(installIndex).toBeGreaterThan(digestIndex);
+  });
 });
 
 describe("retry-safe publication", () => {

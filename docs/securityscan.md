@@ -28,7 +28,7 @@ Findings are appended as they are discovered during the scan.
 - **Exploitability:** Low. Exploitation would require compromise of the npm registry or the npm@11.18.0 package itself; version pinning prevents silent upgrades, and trusted-publisher OIDC limits token exposure. Registry compromise would affect the entire ecosystem, but this job is a single point where unverified code runs with release-adjacent privileges (though the OIDC token is only granted to the separate `publish` job, mitigating this).
 - **File references:** `.github/workflows/publish.yml:56-57`
 - **Recommendation:** Acceptable as-is given the OIDC token isolation; optionally verify npm's integrity hash after install or use a corepack-pinned npm.
-- ⚠️ Disputed 2026-07-29 — not a valid finding: the step adds no trust beyond what the job already accepts. The same job runs `npm ci` for the whole dev tree and takes its Node toolchain from `setup-node`, so `registry.npmjs.org` is already in the job's trust root; pinning npm's tarball hash would not narrow it. The version is pinned twice (workflow line 57 and `REVIEWED_NPM_VERSION` in `scripts/release-packages.mjs:21`, which fails the release unless the root manifest pins `npm@11.18.0`), so silent drift is impossible, and the preparation job holds no `id-token: write`.
+- ✅ Resolved 2026-07-29 — the bootstrap now downloads `npm-11.18.0.tgz`, checks it against a committed SHA-256 digest, and installs from the verified file, so it is pinned by bytes rather than by registry metadata. `npm ci` was already constrained by `package-lock.json` integrity hashes, which left this fetch as the one install in the job with no digest of its own. A regression test at `tests/release-packages.test.ts` asserts the digest check precedes the install.
 
 ### FINDING-003 — CI runs `npm ci` on untrusted pull-request code
 
@@ -83,7 +83,7 @@ _Scan completed 2026-07-28._
 
 ### Disposition review 2026-07-29
 
-Every finding was re-examined against the code before being marked. FINDING-004
-is resolved; FINDING-001, FINDING-002, and FINDING-003 are disputed with the
+Every finding was re-examined against the code before being marked. FINDING-002
+and FINDING-004 are resolved; FINDING-001 and FINDING-003 are disputed with the
 reasoning recorded on each item. No code path in `packages/spine/src` or
-`scripts/release-packages.mjs` required a change, and no workflow was modified.
+`scripts/release-packages.mjs` required a change.
