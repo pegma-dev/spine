@@ -18,6 +18,7 @@ Findings are appended as they are discovered during the scan.
 - **Exploitability:** Negligible. The files cannot affect CI or publishing (never tracked, `.gitignore`d, and `verifyPreparedManifest` would reject the stale schema). The only residual risk is a local operator manually pointing `release:publish --manifest` at this stale file, which the script's own validation would refuse.
 - **File references:** `.release/package-manifest.json`, `.release/pegma-spine-0.1.1.tgz`, `.gitignore:4`, `scripts/release-packages.mjs:432-470`
 - **Recommendation:** Optionally delete the local `.release/` directory; no repository change required.
+- ⚠️ Disputed 2026-07-29 — not a valid finding: the artifacts are untracked and `.gitignore`d, so they are absent from any clean checkout and from CI; `verifyPreparedManifest` rejects the stale schema (it requires a top-level `package` object and `releaseTag === "v" + version`) and additionally rebinds the manifest to the current `HEAD` commit, so no repository change exists to make.
 
 ### FINDING-002 — Release job installs npm from the registry pinned by version only
 
@@ -27,6 +28,7 @@ Findings are appended as they are discovered during the scan.
 - **Exploitability:** Low. Exploitation would require compromise of the npm registry or the npm@11.18.0 package itself; version pinning prevents silent upgrades, and trusted-publisher OIDC limits token exposure. Registry compromise would affect the entire ecosystem, but this job is a single point where unverified code runs with release-adjacent privileges (though the OIDC token is only granted to the separate `publish` job, mitigating this).
 - **File references:** `.github/workflows/publish.yml:56-57`
 - **Recommendation:** Acceptable as-is given the OIDC token isolation; optionally verify npm's integrity hash after install or use a corepack-pinned npm.
+- ✅ Resolved 2026-07-29 — the bootstrap now downloads `npm-11.18.0.tgz`, checks it against a committed SHA-256 digest, and installs from the verified file, so it is pinned by bytes rather than by registry metadata. `npm ci` was already constrained by `package-lock.json` integrity hashes, which left this fetch as the one install in the job with no digest of its own. A regression test at `tests/release-packages.test.ts` asserts the digest check precedes the install.
 
 ### FINDING-003 — CI runs `npm ci` on untrusted pull-request code
 
@@ -36,6 +38,7 @@ Findings are appended as they are discovered during the scan.
 - **Exploitability:** Very low. The workflow declares `permissions: contents: read` (lines 9–10), holds no secrets, and has no `id-token: write`, so a malicious install script gains nothing exfiltratable. The release workflow is gated on protected signed tags and does not run on PRs. This is the standard, accepted PR-CI risk profile.
 - **File references:** `.github/workflows/ci.yml:7,9-10,38`
 - **Recommendation:** None required. Optionally set `ignore-scripts: true` in a committed `.npmrc` if lifecycle scripts are never needed in CI.
+- ⚠️ Disputed 2026-07-29 — not a valid finding: there is nothing for a malicious install script to reach. The trigger is `pull_request`, not `pull_request_target`, so a fork PR runs with a read-only token from the fork's context; the workflow declares only `contents: read`, references no secrets, and has no `id-token: write`. Publishing is reachable only from a `release: published` event on a protected signed tag.
 
 ### FINDING-004 — README claims the package is unpublished, but `0.1.1` is on npm
 
@@ -45,6 +48,7 @@ Findings are appended as they are discovered during the scan.
 - **Exploitability:** None. Stale trust guidance could confuse consumers about the package's maturity, and AGENTS.md (`Where things stand`) already documents the published state correctly.
 - **File references:** `README.md:9-10`, `packages/spine/README.md:9-10`, `AGENTS.md`
 - **Recommendation:** Update both READMEs' disclaimer to reflect the published `0.1.1` state.
+- ✅ Resolved 2026-07-29 — both READMEs' `[!IMPORTANT]` note now states that `@pegma/spine` is published on npm while keeping the unstable-API and not-production-ready warnings.
 
 ---
 
@@ -76,3 +80,10 @@ All four findings are Low or Informational. The repository's security posture is
 The published registry artifact `@pegma/spine@0.1.1` has `dist.integrity` and `dist.shasum` identical to the hashes recorded in the local `.release/package-manifest.json` — the published bytes match the reviewed build.
 
 _Scan completed 2026-07-28._
+
+### Disposition review 2026-07-29
+
+Every finding was re-examined against the code before being marked. FINDING-002
+and FINDING-004 are resolved; FINDING-001 and FINDING-003 are disputed with the
+reasoning recorded on each item. No code path in `packages/spine/src` or
+`scripts/release-packages.mjs` required a change.
