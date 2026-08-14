@@ -168,7 +168,9 @@ describe("release source authentication", () => {
       "utf8",
     );
     const jobsMarker = "\njobs:\n";
-    const jobs = workflow.slice(workflow.indexOf(jobsMarker) + jobsMarker.length);
+    const jobs = workflow.slice(
+      workflow.indexOf(jobsMarker) + jobsMarker.length,
+    );
     const prepare = jobs.slice(
       jobs.indexOf("  prepare:"),
       jobs.indexOf("\n  publish:"),
