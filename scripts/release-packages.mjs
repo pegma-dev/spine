@@ -18,7 +18,7 @@ const PACKAGE = {
   name: "@pegma/spine",
 };
 const REPOSITORY_URL = "git+https://github.com/pegma-dev/spine.git";
-const REVIEWED_NPM_VERSION = "11.18.0";
+const REVIEWED_PNPM_VERSION = "10.34.5";
 const STABLE_SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
 
 export const RELEASE_PACKAGES = [PACKAGE];
@@ -77,6 +77,26 @@ function hashTarball(bytes) {
     shasum: createHash("sha1").update(bytes).digest("hex"),
     integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,
   };
+}
+
+function pnpmLockfileHasImporter(lockfile, importer) {
+  let inImporters = false;
+  for (const line of lockfile.split("\n")) {
+    if (!inImporters) {
+      if (line === "importers:") inImporters = true;
+      continue;
+    }
+    if (line.length > 0 && !line.startsWith(" ") && !line.startsWith("\t")) {
+      return false;
+    }
+    if (
+      line.startsWith(`  ${importer}:`) ||
+      line.startsWith(`  "${importer}":`)
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function exportTargets(value) {
@@ -151,14 +171,14 @@ export async function validateRepository(options = {}) {
   const rootManifest = await readJson(join(root, "package.json"));
   const packageDirectory = join(root, "packages", PACKAGE.directory);
   const manifest = await readJson(join(packageDirectory, "package.json"));
-  const lockfile = await readJson(join(root, "package-lock.json"));
-  const lockEntry = lockfile.packages?.[`packages/${PACKAGE.directory}`];
+  const lockfile = await readFile(join(root, "pnpm-lock.yaml"), "utf8");
+  const lockImporter = `packages/${PACKAGE.directory}`;
 
   if (
     rootManifest.private !== true ||
-    rootManifest.packageManager !== `npm@${REVIEWED_NPM_VERSION}`
+    rootManifest.packageManager !== `pnpm@${REVIEWED_PNPM_VERSION}`
   ) {
-    fail(`the private root must pin npm@${REVIEWED_NPM_VERSION}`);
+    fail(`the private root must pin pnpm@${REVIEWED_PNPM_VERSION}`);
   }
   if (
     manifest.name !== PACKAGE.name ||
@@ -197,8 +217,8 @@ export async function validateRepository(options = {}) {
   }
   await stat(join(packageDirectory, "README.md"));
   await stat(join(packageDirectory, "LICENSE"));
-  if (lockEntry?.version !== manifest.version) {
-    fail(`${PACKAGE.name} version is not synchronized with package-lock.json`);
+  if (!pnpmLockfileHasImporter(lockfile, lockImporter)) {
+    fail(`${PACKAGE.name} is not synchronized with pnpm-lock.yaml`);
   }
 
   const publicWorkspaces = [];

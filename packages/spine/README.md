@@ -104,10 +104,10 @@ requirements should shape the contract rather than a guess made in advance.
 Spine requires Node.js 22 or newer.
 
 ```sh
-npm ci
-npm run check
-npm test
-npm run format:check
+pnpm install --frozen-lockfile
+pnpm run check
+pnpm test
+pnpm run format:check
 ```
 
 ## License
