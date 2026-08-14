@@ -53,7 +53,7 @@ exclude `src/**/*.test.ts`, or compiled tests are published to consumers.
 ## Workflow
 
 Work on a `claude/*` branch and open a pull request. The gate is
-`npm run format:check`, `npm run check`, `npm test` — all three, on Node 22 and 24.
+`pnpm run format:check`, `pnpm run check`, `pnpm test` — all three, on Node 22 and 24.
 
 Publishing is trusted-publisher only; no tokens exist. A release starts from a
 protected signed annotated `vX.Y.Z` tag already on `origin/main`, followed by

@@ -53,9 +53,12 @@ jobs:
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
+      - name: Enable pnpm
+        run: corepack enable
+
       # Installed from a tarball checked against a committed hash, so the
       # bootstrap is pinned by bytes rather than by registry metadata. Every
-      # other install in this job is already covered by package-lock.json.
+      # other install in this job is already covered by pnpm-lock.yaml.
       - name: Use the reviewed npm release
         shell: bash
         env:
@@ -75,19 +78,19 @@ jobs:
           fi
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Check formatting
-        run: npm run format:check
+        run: pnpm run format:check
 
       - name: Check types
-        run: npm run check
+        run: pnpm run check
 
       - name: Run tests
-        run: npm test
+        run: pnpm test
 
       - name: Prepare and verify the release tarball
-        run: npm run release:pack -- -- --require-clean --require-main-ancestor --require-release-tag --expected-release-commit "${RELEASE_COMMIT}" --output .release
+        run: pnpm run release:pack -- -- --require-clean --require-main-ancestor --require-release-tag --expected-release-commit "${RELEASE_COMMIT}" --output .release
 
       - name: Upload the prepared release
         id: upload
@@ -135,4 +138,4 @@ jobs:
           path: .release
 
       - name: Publish the verified prepared tarball
-        run: npm run release:publish -- -- --expected-release-commit "${RELEASE_COMMIT}" --manifest .release/package-manifest.json
+        run: node scripts/release-packages.mjs publish --expected-release-commit "${RELEASE_COMMIT}" --manifest .release/package-manifest.json

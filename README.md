@@ -101,13 +101,14 @@ requirements should shape the contract rather than a guess made in advance.
 
 ## Development
 
-Spine requires Node.js 22 or newer.
+Spine is developed on Node.js 22 or 24.
 
 ```sh
-npm ci
-npm run check
-npm test
-npm run format:check
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run check
+pnpm test
+pnpm run format:check
 ```
 
 Maintainers should follow [the release runbook](docs/RELEASING.md). Releases
