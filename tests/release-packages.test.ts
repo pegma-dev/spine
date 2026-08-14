@@ -157,7 +157,9 @@ describe("release source authentication", () => {
     expect(publish).not.toContain("npm ci");
     expect(publish).not.toContain("npm install");
     expect(publish).not.toContain("pnpm install");
-    expect(publish).toContain("pnpm run release:publish");
+    expect(publish).not.toContain("corepack enable");
+    expect(publish).not.toContain("pnpm run");
+    expect(publish).toContain("node scripts/release-packages.mjs publish");
     expect(workflow).not.toContain("workflow_dispatch");
     expect(workflow).toContain("retention-days: 30");
   });
@@ -180,7 +182,33 @@ describe("release source authentication", () => {
     expect(prepare).toContain("corepack enable");
     expect(prepare).toContain("pnpm install --frozen-lockfile");
     expect(prepare).not.toContain("npm ci");
+  });
+
+  it("pins the npm bootstrap by tarball hash rather than by version alone", () => {
+    const workflow = readFileSync(
+      join(process.cwd(), ".github", "workflows", "publish.yml"),
+      "utf8",
+    );
+    // Packing and registry operations must use reviewed npm, not Node's
+    // bundled CLI. The lockfile constrains every other install.
     expect(workflow).not.toMatch(/npm install --global npm@/u);
+    expect(workflow).toMatch(/NPM_TARBALL_SHA256: [0-9a-f]{64}\n/u);
+    expect(workflow).toContain("sha256sum --check --strict --quiet");
+    const digestIndex = workflow.indexOf("sha256sum --check");
+    const installIndex = workflow.indexOf('npm install --global "${tarball}"');
+    expect(digestIndex).toBeGreaterThanOrEqual(0);
+    expect(installIndex).toBeGreaterThan(digestIndex);
+  });
+
+  it("invokes the npm CLI rather than npm_execpath", () => {
+    const script = readFileSync(
+      join(process.cwd(), "scripts", "release-packages.mjs"),
+      "utf8",
+    );
+    expect(script).not.toContain("process.env.npm_execpath");
+    expect(script).toContain(
+      'process.platform === "win32" ? "npm.cmd" : "npm"',
+    );
   });
 });
 

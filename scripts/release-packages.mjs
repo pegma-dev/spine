@@ -59,13 +59,12 @@ function run(command, arguments_, options = {}) {
 }
 
 function runNpm(arguments_, options = {}) {
-  const npmExecPath = process.env.npm_execpath;
-  return npmExecPath === undefined
-    ? run(process.platform === "win32" ? "npm.cmd" : "npm", arguments_, {
-        ...options,
-        shell: process.platform === "win32",
-      })
-    : run(process.execPath, [npmExecPath, ...arguments_], options);
+  // Always invoke the npm CLI, not npm_execpath. Scripts run under pnpm set
+  // npm_execpath to pnpm, and pack/publish/view must stay on reviewed npm.
+  return run(process.platform === "win32" ? "npm.cmd" : "npm", arguments_, {
+    ...options,
+    shell: process.platform === "win32",
+  });
 }
 
 function gitCommand() {

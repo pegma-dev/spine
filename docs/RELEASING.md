@@ -42,13 +42,15 @@ The release workflow verifies that the tag:
 - is contained in `origin/main`.
 
 Its preparation job has no OIDC permission. It enables the `packageManager`-pinned
-pnpm via Corepack without dependency caching, runs the full gate, builds and packs once,
+pnpm via Corepack without dependency caching, installs the reviewed npm release
+from a digest-checked tarball, runs the full gate, builds and packs once,
 smoke-tests the tarball from a clean consumer, records its SHA-1 and SHA-512
 integrity, and uploads the exact prepared artifact.
 
 Only the `npm-publish` job receives `id-token: write`. It installs no
-dependencies, verifies the prepared manifest and tarball hashes against the
-release commit, and publishes that tarball with npm provenance.
+dependencies and does not download pnpm. It verifies the prepared manifest and
+tarball hashes against the release commit, and publishes that tarball with npm
+provenance.
 
 ## Safe retry
 
