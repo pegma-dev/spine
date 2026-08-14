@@ -101,7 +101,7 @@ requirements should shape the contract rather than a guess made in advance.
 
 ## Development
 
-Spine requires Node.js 22 or newer.
+Spine is developed on Node.js 22 or 24.
 
 ```sh
 corepack enable
